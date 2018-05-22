@@ -140,7 +140,7 @@ public class vehicleScript : MonoBehaviour
         else currentMaxSpeed = maxSpeed;
 
         // charge booster
-        updateBoost();
+        updateBoost(); // just move this to the boostscript already...
         updateBanking();
 
         // update variables
@@ -155,6 +155,8 @@ public class vehicleScript : MonoBehaviour
     }
 
     //---------------------------------------
+    // move to boost-script
+
     private void updateBoost()
     {
         if (currentSpeed > currentMaxSpeed && currentMaxSpeed > 0)
