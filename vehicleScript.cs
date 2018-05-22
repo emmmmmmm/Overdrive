@@ -230,7 +230,7 @@ public class vehicleScript : MonoBehaviour
         bank(amount);
     }
     //---------------------------------------
-    public void pitch(float amount)
+    public void Pitch(float amount)
     {
         // if (!isInputEnabled) return; // nope, always allow this, so the player can confirm that inputs are working!
         // only pitch when flying! // if i do that, then i maybe shoudln't align to gravity direction? ... hmmmm....
@@ -279,7 +279,7 @@ public class vehicleScript : MonoBehaviour
         // vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward *
         currentBanking += bankingSpring.update(-amount);
     }
-    private void bank(float amount)
+    private void Bank(float amount)
     {
         // float bankAmount = 20;
         //vehicleModel.transform.eulerAngles = transform.eulerAngles +
