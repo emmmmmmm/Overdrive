@@ -270,7 +270,7 @@ public class vehicleScript : MonoBehaviour
     {
         if (!player.isInputEnabled) return;
         if (!groundContact) return; // gravity already applied
-        applyGravity(gravityDirection);// actually there's really no need to pass the direction...!
+        ApplyGravity(gravityDirection);// actually there's really no need to pass the direction...!
         //        rb.AddForce(gravityDirection * gravity * 1f, ForceMode.Acceleration);
     }
     //---------------------------------------
