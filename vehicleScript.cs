@@ -12,14 +12,13 @@ public class vehicleScript : MonoBehaviour
 {
 
     /* Manages AG-Vehicle Physics*/
-    
+
 
 
     // 2Do:
     // - clean up
-    // - I really should change all those "input" publics to Serialize-field-privates.
+    // - change all those "input" publics to Serialize-field-privates.
     // - use private + get{} for variables that are "read only"
-    // - Functions Start With An Uppercase Letter!!
     // - move all remaining audio-events to audio-script!
 
     [Space(10)]
@@ -42,7 +41,7 @@ public class vehicleScript : MonoBehaviour
     public float liftForce = 50;
     public float holdForce = 100;
     public Vector3 drag = new Vector3(0.02f, 0.24f, 0.02f);
-    public float airDrag = 0.02f;
+    public float airDrag = 0.02f; 
     public float angularDrag = 1f;
     public float forwardAlignmentSpeed = 0.1f; // "magnetic stabalizers"
     public float currentGravity = 5; 
@@ -86,12 +85,12 @@ public class vehicleScript : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>(); // required
         player = GetComponent<Player>(); // required
-        // set default gravity:
+        // set initial gravity:
         gravityDirection = Vector3.down;
         currentGravity = standardGravity;
     }
     //----------------------------------------------------------------
-    // Physics
+    // Physics 
     //----------------------------------------------------------------
     #region physics
     void FixedUpdate()
@@ -124,15 +123,15 @@ public class vehicleScript : MonoBehaviour
         }
         normal.Normalize(); // averaged up-vector
 
-        applyDrag(groundContact);
+        ApplyDrag(groundContact);
         if (groundContact)        // align to ground!
         {
-            alignRotation(normal);
+            AlignRotation(normal);
         }
         else // flying
         {
-            applyGravity(gravityDirection);
-            alignRotation(-gravityDirection);
+            ApplyGravity(gravityDirection);
+            AlignRotation(-gravityDirection);
         }
 
         // increase max speed if you are on the racetrack!
@@ -140,15 +139,15 @@ public class vehicleScript : MonoBehaviour
         else currentMaxSpeed = maxSpeed;
 
         // charge booster
-        updateBoost(); // just move this to the boostscript already...
-        updateBanking();
+        UpdateBoost(); // just move this to the boostscript already...
+        UpdateBanking();
 
         // update variables
         currentSpeed = rb.velocity.magnitude;
     }
     //---------------------------------------
     // align to current up-axis
-    private void alignRotation(Vector3 up)
+    private void AlignRotation(Vector3 up)
     {
         Quaternion rotationCorrection = Quaternion.FromToRotation(transform.up, up) * transform.rotation;
         rb.MoveRotation(Quaternion.Lerp(rb.rotation, rotationCorrection, Time.fixedDeltaTime * 10));
@@ -157,7 +156,7 @@ public class vehicleScript : MonoBehaviour
     //---------------------------------------
     // move to boost-script
 
-    private void updateBoost()
+    private void UpdateBoost()
     {
         if (currentSpeed > currentMaxSpeed && currentMaxSpeed > 0)
             GetComponent<boostScript>().chargeBoost();
@@ -167,13 +166,13 @@ public class vehicleScript : MonoBehaviour
     }
 
     //---------------------------------------
-    private void applyGravity(Vector3 dir)
+    private void ApplyGravity(Vector3 dir)
     {
         rb.velocity += dir * currentGravity;
         //        rb.AddForce(dir * gravity, ForceMode.Acceleration);
     }
     //---------------------------------------
-    private void applyDrag(bool isGrounded)
+    private void ApplyDrag(bool isGrounded)
     {
         Vector3 vel = transform.InverseTransformDirection(rb.velocity);
         if (isGrounded)
@@ -201,7 +200,7 @@ public class vehicleScript : MonoBehaviour
     // steering
     //----------------------------------------------------------------
     #region steering
-    public void accelerate(float amount)
+    public void Accelerate(float amount)
     {
 
         if (!player.isInputEnabled) return; // shouldn't even be called from inputScript, but just to be sure
@@ -212,7 +211,7 @@ public class vehicleScript : MonoBehaviour
         currentAcceleration = amount;
     }
     //---------------------------------------
-    public void deccelerate(float amount)
+    public void Deccelerate(float amount)
     { //0->1
         Vector3 vel = transform.InverseTransformDirection(rb.velocity);
         if (vel.z > 0)
@@ -221,7 +220,7 @@ public class vehicleScript : MonoBehaviour
     }
 
     //---------------------------------------
-    public void turn(float amount)
+    public void Turn(float amount)
     {
         if (!player.isInputEnabled) return;
         // some lerping might be nice?
@@ -241,7 +240,7 @@ public class vehicleScript : MonoBehaviour
         rb.MoveRotation(rot);
     }
     //---------------------------------------
-    public void strafe(float amount) // strave? -> check your spelling!
+    public void Strafe(float amount) // strave? -> check your spelling!
     {
         if (!player.isInputEnabled) return;
         // rb.AddForce(transform.right * amount * straveSpeed);
@@ -250,13 +249,13 @@ public class vehicleScript : MonoBehaviour
         springBank(amount);
     }
     //---------------------------------------
-    public void boost()
+    public void Boost()
     {
         if (!player.isInputEnabled) return;
-        if (GetComponent<boostScript>().applyBoost() < 0) return;
+        if (GetComponent<boostScript>().ApplyBoost() < 0) return;
 
         if (GetComponent<CameraScript>())
-            GetComponent<CameraScript>().boost();
+            GetComponent<CameraScript>().Boost();
         // play boost audio
         if (turboSoundEvent != "")
             FMODUnity.RuntimeManager.PlayOneShot(turboSoundEvent, transform.position);
@@ -264,7 +263,7 @@ public class vehicleScript : MonoBehaviour
 
     //---------------------------------------
     // player controlled gravity
-    public void enableGravity()
+    public void EnableGravity()
     {
         if (!player.isInputEnabled) return;
         if (!groundContact) return; // gravity already applied
@@ -274,7 +273,7 @@ public class vehicleScript : MonoBehaviour
     //---------------------------------------
     // remove the spring, use animation blend tree for this...! much clean, very simple, WOW!
     Spring bankingSpring = new Spring(); // move to Top
-    private void springBank(float amount)
+    private void SpringBank(float amount)
     {
      
         // vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward *
@@ -286,7 +285,7 @@ public class vehicleScript : MonoBehaviour
         //vehicleModel.transform.eulerAngles = transform.eulerAngles +
         currentBanking += -amount;
     }
-    private void updateBanking()
+    private void UpdateBanking()
     {
         float bankAmount = currentBanking * 20f;
         bankAmount = Mathf.Clamp(bankAmount, -20, 20);
@@ -297,18 +296,18 @@ public class vehicleScript : MonoBehaviour
     #endregion
 
     //---------------------------------------
-    public float getSpeed() { return currentSpeed; }
+    public float GetSpeed() { return currentSpeed; }
     //---------------------------------------
     public void Respawn()
     {
         // todo:
         // disable input, trigger animation, on animation-end: re-enable inputs
 
-        Transform SpawnPoint = GetComponent<CurrentPositionScript>().GetRespawnPoint();
+        Transform spawnPoint = GetComponent<CurrentPositionScript>().GetRespawnPoint();
         rb.velocity *= 0.0f;
         rb.angularVelocity *= 0.0f;
-        rb.rotation = SpawnPoint.rotation;
-        rb.position = SpawnPoint.position + Vector3.up * 5; // remove z-offset! (and place waypoints properly!)
+        rb.rotation = spawnPoint.rotation;
+        rb.position = spawnPoint.position + Vector3.up * 5; // remove z-offset! (and place waypoints properly!)
 
         // move to new player.reset() function?
         player.health = player.maxHealth;
@@ -316,7 +315,7 @@ public class vehicleScript : MonoBehaviour
         // reset gravity?
 
         // reset Boost
-        foreach (boost b in GetComponentsInChildren<boost>())
+        foreach (Boost b in GetComponentsInChildren<Boost>())
         {
             b.removeBoost();
         }
