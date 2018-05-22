@@ -21,6 +21,10 @@ public class vehicleScript : MonoBehaviour
     // - use private + get{} for variables that are "read only"
     // - move all remaining audio-events to audio-script!
 
+
+
+
+
     [Space(10)]
     [Header("Movement Settings")] // this will become a ScriptableObject for vehicle-stats (+ physics settings)
     public float acceleration = 50f;
@@ -41,10 +45,10 @@ public class vehicleScript : MonoBehaviour
     public float liftForce = 50;
     public float holdForce = 100;
     public Vector3 drag = new Vector3(0.02f, 0.24f, 0.02f);
-    public float airDrag = 0.02f; 
+    public float airDrag = 0.02f;
     public float angularDrag = 1f;
     public float forwardAlignmentSpeed = 0.1f; // "magnetic stabalizers"
-    public float currentGravity = 5; 
+    public float currentGravity = 5;
     public float standardGravity = 5; // <- from GM
     public Vector3 gravityDirection = Vector3.down;
     public float currentBanking = 0; // no need for this to be public!
@@ -56,7 +60,7 @@ public class vehicleScript : MonoBehaviour
     public float currentSpeed = 0;
     public float overDriveBoost = 0;        // to boostscript...
     public float maxOverDriveBoost = 10;
-    
+
     [Space(10)]
     [Header("Transforms")]
     public GameObject vehicleModel;
@@ -162,7 +166,6 @@ public class vehicleScript : MonoBehaviour
             GetComponent<boostScript>().chargeBoost();
         overDriveBoost = GetComponent<boostScript>().energyPool;
         maxOverDriveBoost = GetComponent<boostScript>().energyPoolMax; // no need to set every time...! -> move to start
-
     }
 
     //---------------------------------------
@@ -275,7 +278,7 @@ public class vehicleScript : MonoBehaviour
     Spring bankingSpring = new Spring(); // move to Top
     private void SpringBank(float amount)
     {
-     
+
         // vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward *
         currentBanking += bankingSpring.update(-amount);
     }
@@ -311,7 +314,7 @@ public class vehicleScript : MonoBehaviour
 
         // move to new player.reset() function?
         player.health = player.maxHealth;
- 
+
         // reset gravity?
 
         // reset Boost
@@ -348,6 +351,7 @@ public class vehicleScript : MonoBehaviour
             collision.release();
             // Debug.Log((float)col.relativeVelocity.magnitude / 350f);
         }
+
         //particles
         for (int i = 0; i < col.contacts.Length; i++)
         {
