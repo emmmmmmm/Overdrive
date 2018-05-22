@@ -3,11 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+
+
 [RequireComponent(typeof(Player))]
 [RequireComponent(typeof(Rigidbody))]
 
 public class vehicleScript : MonoBehaviour
 {
+
+    /* Manages AG-Vehicle Physics*/
+    
+
+
     // 2Do:
     // - clean up
     // - I really should change all those "input" publics to Serialize-field-privates.
