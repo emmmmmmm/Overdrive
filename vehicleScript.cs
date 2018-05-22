@@ -23,7 +23,7 @@ public class vehicleScript : MonoBehaviour
     // - move all remaining audio-events to audio-script!
 
     [Space(10)]
-    [Header("Movement Settings")]
+    [Header("Movement Settings")] // this will become a ScriptableObject for vehicle-stats (+ physics settings)
     public float acceleration = 50f;
     public float decceleration = 0.1f;
     public float maxSpeed = 100f;
@@ -32,12 +32,12 @@ public class vehicleScript : MonoBehaviour
     public float straveSpeed = 40;
     public bool groundContact = false;
     private bool roadContact = false;
-    public float roadSpeedIncrease = 0.06f;
+    public float roadSpeedIncrease = 0.06f; // should be set from GameManager
     public AnimationCurve accelerationCurve; // not yet implemented
     // add curve for drag aswell?
 
     [Space(10)]
-    [Header("Physics Settings")]
+    [Header("Physics Settings")] // -> to ScriptableObject 
     public float hoverHeight = 1;
     public float liftForce = 50;
     public float holdForce = 100;
@@ -46,7 +46,7 @@ public class vehicleScript : MonoBehaviour
     public float angularDrag = 1f;
     public float forwardAlignmentSpeed = 0.1f; // "magnetic stabalizers"
     public float currentGravity = 5; 
-    public float standardGravity = 5;
+    public float standardGravity = 5; // <- from GM
     public Vector3 gravityDirection = Vector3.down;
     public float currentBanking = 0; // no need for this to be public!
 
@@ -55,7 +55,7 @@ public class vehicleScript : MonoBehaviour
     [Header("Race Logic Settings")]
     public float currentAcceleration = 0; // for engine-audio
     public float currentSpeed = 0;
-    public float overDriveBoost = 0;
+    public float overDriveBoost = 0;        // to boostscript...
     public float maxOverDriveBoost = 10;
     
     [Space(10)]
@@ -66,7 +66,7 @@ public class vehicleScript : MonoBehaviour
     // public ParticleSystem dustParticles; // to modify particles if inflight etc.
 
     [Space(10)]
-    [Header("FMOD Audio Events")]
+    [Header("FMOD Audio Events")] // to audio script
     [FMODUnity.EventRef]
     public string boostFieldSoundEvent;
     [FMODUnity.EventRef]
