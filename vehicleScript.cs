@@ -8,12 +8,10 @@ using UnityEngine;
 [RequireComponent(typeof(Player))]
 [RequireComponent(typeof(Rigidbody))]
 
-public class vehicleScript : MonoBehaviour
+public class VehicleScript : MonoBehaviour
 {
 
     /* Manages AG-Vehicle Physics*/
-
-
 
     // 2Do:
     // - clean up
@@ -22,53 +20,28 @@ public class vehicleScript : MonoBehaviour
     // - move all remaining audio-events to audio-script!
 
 
-
-
-
-    [Space(10)]
-    [Header("Movement Settings")] // this will become a ScriptableObject for vehicle-stats (+ physics settings)
-    public float acceleration = 50f;
-    public float decceleration = 0.1f;
-    public float maxSpeed = 100f;
-    private float currentMaxSpeed = 100f;
-    public float turnSpeed = 5;
-    public float straveSpeed = 40;
     public bool groundContact = false;
-    private bool roadContact = false;
-    public float roadSpeedIncrease = 0.06f; // should be set from GameManager
-    public AnimationCurve accelerationCurve; // not yet implemented
-    // add curve for drag aswell?
+    public bool roadContact = false;
 
-    [Space(10)]
-    [Header("Physics Settings")] // -> to ScriptableObject 
-    public float hoverHeight = 1;
-    public float liftForce = 50;
-    public float holdForce = 100;
-    public Vector3 drag = new Vector3(0.02f, 0.24f, 0.02f);
-    public float airDrag = 0.02f;
-    public float angularDrag = 1f;
-    public float forwardAlignmentSpeed = 0.1f; // "magnetic stabalizers"
+
+    private float currentMaxSpeed = 100f;
     public float currentGravity = 5;
     public float standardGravity = 5; // <- from GM
-    public Vector3 gravityDirection = Vector3.down;
-    public float currentBanking = 0; // no need for this to be public!
 
+    public Vector3 gravityDirection = Vector3.down;
+    private float currentBanking = 0;
     // private Vector3 velocity;
-    [Space(10)]
-    [Header("Race Logic Settings")]
     public float currentAcceleration = 0; // for engine-audio
     public float currentSpeed = 0;
     public float overDriveBoost = 0;        // to boostscript...
-    public float maxOverDriveBoost = 10;
+    public LayerMask groundLayer;
 
-    [Space(10)]
     [Header("Transforms")]
     public GameObject vehicleModel;
     public Transform[] hoverPoints;
     public GameObject collisionParticle;
     // public ParticleSystem dustParticles; // to modify particles if inflight etc.
 
-    [Space(10)]
     [Header("FMOD Audio Events")] // to audio script
     [FMODUnity.EventRef]
     public string boostFieldSoundEvent;
@@ -80,15 +53,19 @@ public class vehicleScript : MonoBehaviour
     public string respawnSoundEvent;
 
     [HideInInspector]
-    public Player player;
-
+    public Player player;   // <- now holds the vehiclestats aswell. does this make sense? i'm not sure yet
+                            // this really depends on how i will load the player/vehicle, as in 
+                            // how the whole player setup will work.
     private Rigidbody rb;
+
+    public CameraScript cameraScript;
 
     //---------------------------------------
     void Start()
     {
         rb = GetComponent<Rigidbody>(); // required
         player = GetComponent<Player>(); // required
+
         // set initial gravity:
         gravityDirection = Vector3.down;
         currentGravity = standardGravity;
@@ -109,12 +86,12 @@ public class vehicleScript : MonoBehaviour
 
         for (int i = 0; i < hoverPoints.Length; i++)
         {
-            if (Physics.Raycast(hoverPoints[i].position, transform.up * -1, out hit, hoverHeight * 4f))
+            if (Physics.Raycast(hoverPoints[i].position, transform.up * -1, out hit, player.vehicle.hoverHeight * 4f, groundLayer))
             {
-                strength = (hoverHeight - hit.distance) / hoverHeight * 100f;
+                strength = (player.vehicle.hoverHeight - hit.distance) / player.vehicle.hoverHeight * 100f;
 
-                if (strength < 0) strength *= holdForce;
-                else strength *= liftForce * Mathf.Abs(strength / 2);
+                if (strength < 0) strength *= player.vehicle.holdForce;
+                else strength *= player.vehicle.liftForce * Mathf.Abs(strength / 2);
 
                 upForce = transform.up * strength;
 
@@ -123,6 +100,7 @@ public class vehicleScript : MonoBehaviour
                 groundContact = true;
                 if (hit.transform.tag == "raceTrack") roadContact = true;
                 Debug.DrawRay(hoverPoints[i].position, upForce / 10f, Color.red);
+
             }
         }
         normal.Normalize(); // averaged up-vector
@@ -139,8 +117,8 @@ public class vehicleScript : MonoBehaviour
         }
 
         // increase max speed if you are on the racetrack!
-        if (roadContact) currentMaxSpeed = maxSpeed + maxSpeed * roadSpeedIncrease;
-        else currentMaxSpeed = maxSpeed;
+        if (roadContact) currentMaxSpeed = player.vehicle.maxSpeed + player.vehicle.maxSpeed * player.vehicle.roadSpeedIncrease;
+        else currentMaxSpeed = player.vehicle.maxSpeed;
 
         // charge booster
         UpdateBoost(); // just move this to the boostscript already...
@@ -165,7 +143,7 @@ public class vehicleScript : MonoBehaviour
         if (currentSpeed > currentMaxSpeed && currentMaxSpeed > 0)
             GetComponent<boostScript>().ChargeBoost();
         overDriveBoost = GetComponent<boostScript>().energyPool;
-        maxOverDriveBoost = GetComponent<boostScript>().energyPoolMax; // no need to set every time...! -> move to start
+        player.vehicle.maxOverDriveBoost = GetComponent<boostScript>().energyPoolMax; // no need to set every time...! -> move to start
     }
 
     //---------------------------------------
@@ -180,22 +158,22 @@ public class vehicleScript : MonoBehaviour
         Vector3 vel = transform.InverseTransformDirection(rb.velocity);
         if (isGrounded)
         {
-            vel = Vector3.Scale(vel, (Vector3.one - drag));
+            vel = Vector3.Scale(vel, (Vector3.one - player.vehicle.drag));
         }
         else // flying
         {
-            vel *= (1f - airDrag);
+            vel *= (1f - player.vehicle.airDrag);
         }
 
         vel = transform.TransformDirection(vel);
         rb.velocity = vel;
-        rb.angularVelocity *= 1f - angularDrag;
+        rb.angularVelocity *= 1f - player.vehicle.angularDrag;
 
         // forward alignment!
         // rotate velocity vector towards the ships forward! 
         float side = Vector3.Dot(transform.right, rb.velocity.normalized);
-        rb.velocity += transform.forward * Mathf.Abs(side) * forwardAlignmentSpeed;
-        rb.velocity -= transform.right * side * forwardAlignmentSpeed;
+        rb.velocity += transform.forward * Mathf.Abs(side) * player.vehicle.forwardAlignmentSpeed;
+        rb.velocity -= transform.right * side * player.vehicle.forwardAlignmentSpeed;
 
     }
     #endregion
@@ -207,9 +185,9 @@ public class vehicleScript : MonoBehaviour
     {
 
         if (!player.isInputEnabled) return; // shouldn't even be called from inputScript, but just to be sure
-        if (rb.velocity.magnitude < currentMaxSpeed - acceleration)
+        if (rb.velocity.magnitude < currentMaxSpeed - player.vehicle.acceleration)
             //            rb.AddForce(transform.forward * acceleration * amount);
-            rb.velocity += transform.forward * acceleration * amount;
+            rb.velocity += transform.forward * player.vehicle.acceleration * amount;
 
         currentAcceleration = amount;
     }
@@ -219,7 +197,7 @@ public class vehicleScript : MonoBehaviour
         Vector3 vel = transform.InverseTransformDirection(rb.velocity);
         if (vel.z > 0)
             // rb.AddForce(transform.forward * -decceleration * amount);
-            rb.velocity -= transform.forward * decceleration * amount;
+            rb.velocity -= transform.forward * player.vehicle.decceleration * amount;
     }
 
     //---------------------------------------
@@ -228,7 +206,7 @@ public class vehicleScript : MonoBehaviour
         if (!player.isInputEnabled) return;
         // some lerping might be nice?
         Quaternion rot = rb.rotation;
-        rot *= Quaternion.Euler(0, turnSpeed * amount, 0);
+        rot *= Quaternion.Euler(0, player.vehicle.turnSpeed * amount, 0);
         rb.MoveRotation(rot);
         Bank(amount);
     }
@@ -239,7 +217,7 @@ public class vehicleScript : MonoBehaviour
         // only pitch when flying! // if i do that, then i maybe shoudln't align to gravity direction? ... hmmmm....
         // if (groundContact) return;
         Quaternion rot = rb.rotation;
-        rot *= Quaternion.Euler(-turnSpeed * amount, 0, 0);
+        rot *= Quaternion.Euler(-player.vehicle.turnSpeed * amount, 0, 0);
         rb.MoveRotation(rot);
     }
     //---------------------------------------
@@ -248,8 +226,8 @@ public class vehicleScript : MonoBehaviour
         if (!player.isInputEnabled) return;
         // rb.AddForce(transform.right * amount * straveSpeed);
         // rb.MovePosition(transform.position + transform.right * amount * straveSpeed); // !?? warum kippt des!?
-        rb.velocity += transform.right * straveSpeed * amount;
-        SpringBank(amount);
+        rb.velocity += transform.right * player.vehicle.straveSpeed * amount;
+        SpringBank(-amount);
     }
     //---------------------------------------
     public void Boost()
@@ -259,6 +237,7 @@ public class vehicleScript : MonoBehaviour
 
         if (GetComponent<CameraScript>())
             GetComponent<CameraScript>().Boost();
+        if (cameraScript != null) cameraScript.Boost();
         // play boost audio
         if (turboSoundEvent != "")
             FMODUnity.RuntimeManager.PlayOneShot(turboSoundEvent, transform.position);
@@ -279,20 +258,23 @@ public class vehicleScript : MonoBehaviour
     private void SpringBank(float amount)
     {
 
-        // vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward *
-        currentBanking += bankingSpring.update(-amount);
+        currentBanking += bankingSpring.update(amount);
     }
     private void Bank(float amount)
     {
         // float bankAmount = 20;
-        //vehicleModel.transform.eulerAngles = transform.eulerAngles +
-        currentBanking += -amount;
+        currentBanking += amount;
     }
     private void UpdateBanking()
     {
         float bankAmount = currentBanking * 20f;
-        bankAmount = Mathf.Clamp(bankAmount, -20, 20);
-        vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward * bankAmount;
+        //  bankAmount = Mathf.Clamp(bankAmount, -20, 20);
+        //vehicleModel.transform.eulerAngles = transform.eulerAngles + Vector3.forward * bankAmount;
+        // currentBanking = 0;
+
+        bankAmount = -currentBanking * 0.5f + 0.5f;
+
+        vehicleModel.GetComponent<Animator>().SetFloat("Bank", bankAmount);
         currentBanking = 0;
     }
 
@@ -313,7 +295,7 @@ public class vehicleScript : MonoBehaviour
         rb.position = spawnPoint.position + Vector3.up * 5; // remove z-offset! (and place waypoints properly!)
 
         // move to new player.reset() function?
-        player.health = player.maxHealth;
+        player.health = player.vehicle.maxHealth;
 
         // reset gravity?
 
