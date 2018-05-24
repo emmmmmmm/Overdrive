@@ -163,7 +163,7 @@ public class vehicleScript : MonoBehaviour
     private void UpdateBoost()
     {
         if (currentSpeed > currentMaxSpeed && currentMaxSpeed > 0)
-            GetComponent<boostScript>().chargeBoost();
+            GetComponent<boostScript>().ChargeBoost();
         overDriveBoost = GetComponent<boostScript>().energyPool;
         maxOverDriveBoost = GetComponent<boostScript>().energyPoolMax; // no need to set every time...! -> move to start
     }
@@ -230,7 +230,7 @@ public class vehicleScript : MonoBehaviour
         Quaternion rot = rb.rotation;
         rot *= Quaternion.Euler(0, turnSpeed * amount, 0);
         rb.MoveRotation(rot);
-        bank(amount);
+        Bank(amount);
     }
     //---------------------------------------
     public void Pitch(float amount)
@@ -249,7 +249,7 @@ public class vehicleScript : MonoBehaviour
         // rb.AddForce(transform.right * amount * straveSpeed);
         // rb.MovePosition(transform.position + transform.right * amount * straveSpeed); // !?? warum kippt des!?
         rb.velocity += transform.right * straveSpeed * amount;
-        springBank(amount);
+        SpringBank(amount);
     }
     //---------------------------------------
     public void Boost()
@@ -318,7 +318,7 @@ public class vehicleScript : MonoBehaviour
         // reset gravity?
 
         // reset Boost
-        foreach (Boost b in GetComponentsInChildren<Boost>())
+        foreach (boost b in GetComponentsInChildren<boost>())
         {
             b.removeBoost();
         }
