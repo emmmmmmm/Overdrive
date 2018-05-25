@@ -8,7 +8,7 @@ using UnityEngine;
 [RequireComponent(typeof(Player))]
 [RequireComponent(typeof(Rigidbody))]
 
-public class VehicleScript : MonoBehaviour
+public class Vehicle : MonoBehaviour
 {
 
     /* Manages AG-Vehicle Physics*/
@@ -42,15 +42,11 @@ public class VehicleScript : MonoBehaviour
     public GameObject collisionParticle;
     // public ParticleSystem dustParticles; // to modify particles if inflight etc.
 
-    [Header("FMOD Audio Events")] // to audio script
-    [FMODUnity.EventRef]
-    public string boostFieldSoundEvent;
-    [FMODUnity.EventRef]
-    public string collisionSoundEvent;
-    [FMODUnity.EventRef]
-    public string turboSoundEvent;
-    [FMODUnity.EventRef]
-    public string respawnSoundEvent;
+
+
+    private VehicleAudio audioScript;
+
+
 
     [HideInInspector]
     public Player player;   // <- now holds the vehiclestats aswell. does this make sense? i'm not sure yet
@@ -58,17 +54,23 @@ public class VehicleScript : MonoBehaviour
                             // how the whole player setup will work.
     private Rigidbody rb;
 
-    public CameraScript cameraScript;
+    public CameraManager cameraScript;
+
+    private Spring bankingSpring = new Spring(); // move to Top
+
+
 
     //---------------------------------------
     void Start()
     {
         rb = GetComponent<Rigidbody>(); // required
         player = GetComponent<Player>(); // required
-
+        audioScript = GetComponent<VehicleAudio>(); 
         // set initial gravity:
         gravityDirection = Vector3.down;
         currentGravity = standardGravity;
+
+        
     }
     //----------------------------------------------------------------
     // Physics 
@@ -82,6 +84,7 @@ public class VehicleScript : MonoBehaviour
         groundContact = false;
         roadContact = false;
         Vector3 normal = Vector3.zero;
+
 
 
         for (int i = 0; i < hoverPoints.Length; i++)
@@ -103,7 +106,8 @@ public class VehicleScript : MonoBehaviour
 
             }
         }
-        normal.Normalize(); // averaged up-vector
+
+                normal.Normalize(); // averaged up-vector
 
         ApplyDrag(groundContact);
         if (groundContact)        // align to ground!
@@ -141,9 +145,9 @@ public class VehicleScript : MonoBehaviour
     private void UpdateBoost()
     {
         if (currentSpeed > currentMaxSpeed && currentMaxSpeed > 0)
-            GetComponent<boostScript>().ChargeBoost();
-        overDriveBoost = GetComponent<boostScript>().energyPool;
-        player.vehicle.maxOverDriveBoost = GetComponent<boostScript>().energyPoolMax; // no need to set every time...! -> move to start
+            GetComponent<VehicleBoost>().ChargeBoost();
+        overDriveBoost = GetComponent<VehicleBoost>().energyPool;
+        player.vehicle.maxOverDriveBoost = GetComponent<VehicleBoost>().energyPoolMax; // no need to set every time...! -> move to start
     }
 
     //---------------------------------------
@@ -233,14 +237,13 @@ public class VehicleScript : MonoBehaviour
     public void Boost()
     {
         if (!player.isInputEnabled) return;
-        if (GetComponent<boostScript>().ApplyBoost() < 0) return;
+        if (GetComponent<VehicleBoost>().ApplyBoost() < 0) return;
 
-        if (GetComponent<CameraScript>())
-            GetComponent<CameraScript>().Boost();
+        if (GetComponent<CameraManager>())
+            GetComponent<CameraManager>().Boost();
         if (cameraScript != null) cameraScript.Boost();
         // play boost audio
-        if (turboSoundEvent != "")
-            FMODUnity.RuntimeManager.PlayOneShot(turboSoundEvent, transform.position);
+        audioScript.Turbo();
     }
 
     //---------------------------------------
@@ -254,11 +257,10 @@ public class VehicleScript : MonoBehaviour
     }
     //---------------------------------------
     // remove the spring, use animation blend tree for this...! much clean, very simple, WOW!
-    Spring bankingSpring = new Spring(); // move to Top
+
     private void SpringBank(float amount)
     {
-
-        currentBanking += bankingSpring.update(amount);
+        currentBanking += bankingSpring.Update(amount);
     }
     private void Bank(float amount)
     {
@@ -288,7 +290,7 @@ public class VehicleScript : MonoBehaviour
         // todo:
         // disable input, trigger animation, on animation-end: re-enable inputs
 
-        Transform spawnPoint = GetComponent<CurrentPositionScript>().GetRespawnPoint();
+        Transform spawnPoint = GetComponent<CurrentPositionManager>().GetRespawnPoint();
         rb.velocity *= 0.0f;
         rb.angularVelocity *= 0.0f;
         rb.rotation = spawnPoint.rotation;
@@ -300,13 +302,14 @@ public class VehicleScript : MonoBehaviour
         // reset gravity?
 
         // reset Boost
-        foreach (boost b in GetComponentsInChildren<boost>())
+        foreach (Boost b in GetComponentsInChildren<Boost>())
         {
-            b.removeBoost();
+            b.RemoveBoost();
         }
 
         //play respawnaudio - will move to new respawn Routine / maybe even called from a respawn animation!
-        FMODUnity.RuntimeManager.PlayOneShot(respawnSoundEvent, transform.position);
+
+        audioScript.Respawn();
 
         /*
                 FMOD.Studio.EventInstance rspwn = FMODUnity.RuntimeManager.CreateInstance(respawnSoundEvent);
@@ -323,16 +326,7 @@ public class VehicleScript : MonoBehaviour
     void OnCollisionEnter(Collision col)
     {
         // audio
-        if (collisionSoundEvent != "")
-        {
-            // FMODUnity.RuntimeManager.PlayOneShot(collisionSoundEvent, transform.position);
-            FMOD.Studio.EventInstance collision = FMODUnity.RuntimeManager.CreateInstance(collisionSoundEvent);
-            collision.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(gameObject, rb));
-            collision.setParameterValue("strength", (float)col.relativeVelocity.magnitude / 350f); // that's a bit "hacky"
-            collision.start();
-            collision.release();
-            // Debug.Log((float)col.relativeVelocity.magnitude / 350f);
-        }
+        audioScript.Collision( col.relativeVelocity.magnitude);
 
         //particles
         for (int i = 0; i < col.contacts.Length; i++)
