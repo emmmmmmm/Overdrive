@@ -1,3 +1,3 @@
-# Overdrive Vehicle Physics
+# Overdrive
 
-manages physics for AG-Vehicle
+All the scripts for a AG racing game prototype
