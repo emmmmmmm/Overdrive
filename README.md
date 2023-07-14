@@ -1,3 +1,3 @@
-# Overdrive
+# Overdrive - AG Physics in Unity
 
-All the scripts for a AG racing game prototype
+All the scripts for a simple AntiGravity-Racing game prototype.
